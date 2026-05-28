@@ -1,0 +1,38 @@
+name: Temporary Linux Snapshot
+
+on:
+  push:
+    branches:
+      - tmp/linux-snapshot-fix-02
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/kicad/kicad:10.0.1
+      options: --user root
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          apt-get update
+          apt-get install -y curl unzip ca-certificates
+          curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.1"
+          echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - run: bun install
+      - run: FORCE_BUN_UPDATE_SNAPSHOTS=1 BUN_UPDATE_SNAPSHOTS=1 bun test tests/sch/repros/repro12-led-name-sch.test.tsx
+      - run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/sch/repros/__snapshots__/repro12-led-name-sch.snap.png
+          git commit -m "tmp update linux snapshot" || true
+          git push origin HEAD:tmp/linux-snapshot-fix-02
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: repro12-linux-snapshot
+          path: tests/sch/repros/__snapshots__/repro12-led-name-sch.snap.png
+          if-no-files-found: error
