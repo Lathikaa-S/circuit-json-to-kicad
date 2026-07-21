@@ -1,7 +1,7 @@
 import type {
   CircuitJson,
-  SchematicNetLabel,
   SchematicComponent,
+  SchematicNetLabel,
   SchematicPort,
   SourceComponentBase,
 } from "circuit-json"
@@ -13,13 +13,14 @@ import {
   SymbolPinNames,
   SymbolPinNumbers,
 } from "kicadts"
-import { ConverterStage } from "../../types"
 import { symbols } from "schematic-symbols"
-import { getLibraryId } from "../getLibraryId"
+import { ConverterStage } from "../../types"
 import {
   getKicadCompatibleComponentName,
   getReferencePrefixForComponent,
 } from "../../utils/getKicadCompatibleComponentName"
+import { getCustomSchematicSymbolName } from "../getCustomSchematicSymbolName"
+import { getLibraryId } from "../getLibraryId"
 import { buildSymbolDataFromSchematicPrimitives } from "./symbols-stage-converters/buildSymbolDataFromSchematicPrimitives"
 import { createDrawingSubsymbol } from "./symbols-stage-converters/createDrawingSubsymbol"
 import { createGenericChipSymbolData } from "./symbols-stage-converters/createGenericChipSymbolData"
@@ -124,6 +125,7 @@ export class AddLibrarySymbolsStage extends ConverterStage<
         (el: any) =>
           (el.type === "schematic_line" ||
             el.type === "schematic_circle" ||
+            el.type === "schematic_arc" ||
             el.type === "schematic_path") &&
           el.schematic_component_id ===
             schematicComponent.schematic_component_id &&
@@ -281,20 +283,13 @@ export class AddLibrarySymbolsStage extends ConverterStage<
     // 1. schematic_symbol.name
     // 2. manufacturer_part_number / footprinter_string (via getKicadCompatibleComponentName)
     // 3. Generated name based on ftype
-    let symbolName: string
-    if (schematicSymbol.name) {
-      symbolName = schematicSymbol.name
-    } else {
-      const ergonomicName = getKicadCompatibleComponentName(
-        sourceComp,
-        cadComponent,
-      )
-      if (ergonomicName) {
-        symbolName = ergonomicName
-      } else {
-        symbolName = `custom_${sourceComp.ftype || "component"}_${schematicSymbolId}`
-      }
-    }
+    const symbolName = getCustomSchematicSymbolName({
+      explicitName: schematicSymbol.name,
+      sourceComponent: sourceComp,
+      cadComponent,
+      schematicSymbolId,
+      circuitJson: this.ctx.circuitJson,
+    })
 
     // Check if we've already processed this symbol name
     // If two symbols have the same name, we assume they're the same symbol
@@ -505,6 +500,7 @@ export class AddLibrarySymbolsStage extends ConverterStage<
       (el: any) =>
         (el.type === "schematic_path" ||
           el.type === "schematic_circle" ||
+          el.type === "schematic_arc" ||
           el.type === "schematic_line" ||
           el.type === "schematic_text") &&
         el.schematic_component_id === schematicComponentId &&

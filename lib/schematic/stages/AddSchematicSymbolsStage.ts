@@ -1,30 +1,28 @@
+import type { KicadSymbolMetadata } from "@tscircuit/props"
 import type { CircuitJson, SchematicComponent } from "circuit-json"
 import type { KicadSch } from "kicadts"
 import {
+  EmbeddedFonts,
   SchematicSymbol,
-  SymbolLibId,
-  SymbolProperty,
-  SymbolPin,
+  SymbolInstancePath,
   SymbolInstances,
   SymbolInstancesProject,
-  SymbolInstancePath,
-  Uuid,
+  SymbolLibId,
+  SymbolPin,
+  SymbolPinNames,
+  SymbolPinNumbers,
+  SymbolProperty,
   TextEffects,
   TextEffectsFont,
   TextEffectsJustify,
-  EmbeddedFonts,
-  SymbolPinNames,
-  SymbolPinNumbers,
+  Uuid,
 } from "kicadts"
-import { applyToPoint } from "transformation-matrix"
-import { ConverterStage, type ConverterContext } from "../../types"
 import { symbols } from "schematic-symbols"
+import { applyToPoint } from "transformation-matrix"
+import { type ConverterContext, ConverterStage } from "../../types"
+import { getReferenceDesignator } from "../../utils/getKicadCompatibleComponentName"
+import { getCustomSchematicSymbolName } from "../getCustomSchematicSymbolName"
 import { getLibraryId } from "../getLibraryId"
-import {
-  getReferenceDesignator,
-  getKicadCompatibleComponentName,
-} from "../../utils/getKicadCompatibleComponentName"
-import type { KicadSymbolMetadata } from "@tscircuit/props"
 
 /**
  * Adds schematic symbol instances (placed components) to the schematic
@@ -93,6 +91,7 @@ export class AddSchematicSymbolsStage extends ConverterStage<
           (el: any) =>
             (el.type === "schematic_line" ||
               el.type === "schematic_circle" ||
+              el.type === "schematic_arc" ||
               el.type === "schematic_path") &&
             el.schematic_component_id ===
               schematicComponent.schematic_component_id &&
@@ -109,21 +108,13 @@ export class AddSchematicSymbolsStage extends ConverterStage<
             el.type === "schematic_symbol" &&
             el.schematic_symbol_id === schematicSymbolId,
         ) as any
-        if (schematicSymbol?.name) {
-          schematicSymbolName = schematicSymbol.name
-        } else {
-          // Generate a name consistent with AddLibrarySymbolsStage
-          // Use getKicadCompatibleComponentName for consistent naming
-          const ergonomicName = getKicadCompatibleComponentName(
-            sourceComponent,
-            cadComponent,
-          )
-          if (ergonomicName) {
-            schematicSymbolName = ergonomicName
-          } else {
-            schematicSymbolName = `custom_${sourceComponent.ftype || "component"}_${schematicSymbolId}`
-          }
-        }
+        schematicSymbolName = getCustomSchematicSymbolName({
+          explicitName: schematicSymbol?.name,
+          sourceComponent,
+          cadComponent,
+          schematicSymbolId,
+          circuitJson: this.ctx.circuitJson,
+        })
       }
 
       // Get the appropriate library ID based on component type

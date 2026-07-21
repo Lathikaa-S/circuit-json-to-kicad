@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test"
-import { Circuit } from "tscircuit"
 import { CircuitJsonToKicadSchConverter } from "lib"
-import { takeKicadSnapshot } from "../../fixtures/take-kicad-snapshot"
-import { takeCircuitJsonSnapshot } from "../../fixtures/take-circuit-json-snapshot"
+import { Circuit } from "tscircuit"
 import { stackCircuitJsonKicadPngs } from "../../fixtures/stackCircuitJsonKicadPngs"
+import { takeCircuitJsonSnapshot } from "../../fixtures/take-circuit-json-snapshot"
+import { takeKicadSnapshot } from "../../fixtures/take-kicad-snapshot"
 
 const Example = () => (
   <board width="10mm" height="10mm">

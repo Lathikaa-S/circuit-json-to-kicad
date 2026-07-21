@@ -1,5 +1,6 @@
 import type {
   CircuitJson,
+  SchematicArc,
   SchematicCircle,
   SchematicLine,
   SchematicPath,
@@ -40,6 +41,10 @@ export function buildSymbolDataFromSchematicPrimitives(params: {
   const circles = circuitJson.filter(
     (el): el is SchematicCircle =>
       el.type === "schematic_circle" && isElementInTargetSymbolScope(el),
+  )
+  const arcs = circuitJson.filter(
+    (el): el is SchematicArc =>
+      el.type === "schematic_arc" && isElementInTargetSymbolScope(el),
   )
   // Collect lines with schematic_symbol_id (symbol body lines)
   const symbolLines = circuitJson.filter(
@@ -135,6 +140,19 @@ export function buildSymbolDataFromSchematicPrimitives(params: {
       radius: circle.radius ?? 0.5,
       fill: circle.is_filled ?? false,
       fillColor: circle.fill_color,
+    })
+  }
+
+  for (const arc of arcs) {
+    primitives.push({
+      type: "arc",
+      x: arc.center.x,
+      y: arc.center.y,
+      radius: arc.radius,
+      startAngleDegrees: arc.start_angle_degrees,
+      endAngleDegrees: arc.end_angle_degrees,
+      direction: arc.direction,
+      strokeWidth: arc.stroke_width,
     })
   }
 
